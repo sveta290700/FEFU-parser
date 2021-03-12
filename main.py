@@ -73,13 +73,46 @@ if r.status_code == 200:
     r = session.get(link, headers=header)
     soup = BeautifulSoup(r.text, features="html.parser")
     tables = soup.find('tbody')
-    for b in tables.find_all('b'):
-      if b.find('a') is not None:
-        b = b.find('a')
-      b = b.contents[0]
-      res = re.search(r'\s*', str(b))
-      b = b[res.end():]
-      print('        ' + b)
+    td = tables.find_all('td')
+    for td in tables.find_all('td'):
+      b = td.find('b')
+      if b is not None:
+        if b.find('a') is not None:
+          b = b.find('a')
+        b = b.contents[0]
+        res = re.search(r'\s*', str(b))
+        b = b[res.end():]
+
+
+        if td.find('div', {'itemprop':'Post'}) is not None:
+          post = td.find('div', {'itemprop':'Post'})
+          br = post.contents[0]
+        else:
+          br = ''
+          pos = 0
+          for cont in td.contents:
+            pos += 1
+            if str(cont).startswith('<b ') or str(cont).startswith('<b>') or str(cont).startswith('<a href'):
+              break
+          for i in range(pos, len(td.contents)):
+            br += str(td.contents[i])
+          #br = str(td.contents[len(td.contents) - 1])
+          br = br.replace('<br>', '')
+          br = br.replace('</br>', '')
+          br = br.replace('<br/>', '')
+          res = re.split(r'\s*\n\s+', br)
+          res = list(filter(lambda x: len(x) > 0, res))
+          br = ', '.join(res)
+          l = re.findall(r'\S', br)
+
+          test = td.find('br')
+          if len(l) == 0 and td.find('br') is not None:
+            br = td.find('br').contents[0]
+            l.append(br)
+        if len(l) > 0:
+          print('        ' + b + ' - ' + br)
+        else:
+          print('        ' + b + " - Должность не указана")
 
 
 
